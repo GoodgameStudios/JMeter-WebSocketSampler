@@ -5,6 +5,14 @@
 package JMeter.plugins.functional.samplers.websocket;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jmeter.config.Argument;
@@ -16,24 +24,13 @@ import org.apache.jmeter.samplers.AbstractSampler;
 import org.apache.jmeter.samplers.Entry;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.testelement.TestElement;
-import org.apache.jmeter.testelement.property.*;
+import org.apache.jmeter.testelement.TestStateListener;
+import org.apache.jmeter.testelement.property.PropertyIterator;
+import org.apache.jmeter.testelement.property.StringProperty;
+import org.apache.jmeter.testelement.property.TestElementProperty;
 import org.apache.jorphan.logging.LoggingManager;
 import org.apache.jorphan.util.JOrphanUtils;
 import org.apache.log.Logger;
-
-
-
-
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
-import org.apache.jmeter.testelement.TestStateListener;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.websocket.client.ClientUpgradeRequest;
 import org.eclipse.jetty.websocket.client.WebSocketClient;
@@ -249,24 +246,15 @@ public class WebSocketSampler extends AbstractSampler implements TestStateListen
     }
 
     public String getServerPort() {
-        final String port_s = getPropertyAsString("serverPort", "0");
-        Integer port;
         String protocol = getProtocol();
-        
-        try {
-            port = Integer.parseInt(port_s);
-        } catch (Exception ex) {
-            port = 0;
+        String defaultPort = "0";
+        if ("wss".equalsIgnoreCase(protocol)) {
+            defaultPort = String.valueOf(HTTPConstants.DEFAULT_HTTPS_PORT);
+        } else if ("ws".equalsIgnoreCase(protocol)) {
+            defaultPort = String.valueOf(HTTPConstants.DEFAULT_HTTP_PORT);
         }
         
-        if (port == 0) {
-            if ("wss".equalsIgnoreCase(protocol)) {
-                return String.valueOf(HTTPConstants.DEFAULT_HTTPS_PORT);
-            } else if ("ws".equalsIgnoreCase(protocol)) {
-                return String.valueOf(HTTPConstants.DEFAULT_HTTP_PORT);
-            }
-        }
-        return port.toString();
+        return getPropertyAsString("serverPort", defaultPort);
     }
     
     public void setServerPort(String port) {
